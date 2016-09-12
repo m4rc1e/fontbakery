@@ -42,6 +42,7 @@ METADATA.pb will be generated as well.
 
 import os
 import sys
+import shutil
 import argparse
 import importlib
 import glob
@@ -69,12 +70,29 @@ def main(path):
     meta_file = getFile(path, 'METADATA.pb')
     ofl_file = getFile(path, 'OFL.txt')
 
-    # Load gitignore file, if it doesn't exist, create one
-    try:
-        gitignore_file = open(os.path.join(path, '.gitignore'))
-    except IOError:
-        print('No .gitignore file! creating a new one now')
-        gitignore_file = open('.gitignore', 'w')
+    # Create package from font name
+    pkg_name = os.path.basename(os.path.normpath(font_files[0]))
+    # Lobster-Regular.ttf -> lobster
+    pkg_name = pkg_name.split('-')[0].lower()
+    if not os.path.exists(os.path.join(path, pkg_name)):
+        os.makedirs(os.path.join(path, pkg_name))
+
+    ship_repo = os.path.join(path, pkg_name)
+
+    # Copy font files into our ship repo
+    for font in font_files:
+        shutil.copy(font, ship_repo)
+
+    # copy txt_file into our ship repo
+    shutil.copy(description_file, ship_repo)
+    shutil.copy(meta_file, ship_repo)
+    shutil.copy(ofl_file, ship_repo)
+    # # Load gitignore file, if it doesn't exist, create one
+    # try:
+    #     gitignore_file = open(os.path.join(path, '.gitignore'))
+    # except IOError:
+    #     print('No .gitignore file! creating a new one now')
+    #     gitignore_file = open('.gitignore', 'w')
 
 
 if __name__ == "__main__":
