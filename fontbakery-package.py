@@ -36,6 +36,8 @@ Which will be converted to:
 ├── METADATA.pb
 └── OFL.txt
 
+METADATA.pb will be generated as well.
+
 '''
 
 import os
@@ -46,6 +48,14 @@ import glob
 fb_check = importlib.import_module("fontbakery-check-ttf")
 
 
+def getFile(path, f):
+    try:
+        return os.path.join(path, f)
+    except IOError:
+        print('ERROR: File %s does not exist' % f)
+        return
+
+
 def main(path):
 
     font_files = glob.glob(os.path.join(path, 'fonts/*.ttf'))
@@ -53,16 +63,17 @@ def main(path):
         font_files = glob.glob(os.path.join(path, 'fonts', 'ttf/*.ttf'))
     else:
         print('No font sources found, should be at fonts/*.ttf or fonts/ttf/*.ttf')
+        return
 
-    description_file = os.path.join(path, 'DESCRIPTION.en_us.html')
-    meta_file = os.path.join(path, 'METADATA.pb')
-    ofl_file = os.path.join(path, 'OFL.txt')
+    description_file = getFile(path, 'DESCRIPTION.en_us.html')
+    meta_file = getFile(path, 'METADATA.pb')
+    ofl_file = getFile(path, 'OFL.txt')
 
     # Load gitignore file, if it doesn't exist, create one
     try:
-        gitignore_file = os.path.join(path, '.gitignore')
-        print(open(gitignore_file).read())
+        gitignore_file = open(os.path.join(path, '.gitignore'))
     except IOError:
+        print('No .gitignore file! creating a new one now')
         gitignore_file = open('.gitignore', 'w')
 
 
