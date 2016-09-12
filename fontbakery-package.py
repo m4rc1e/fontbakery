@@ -46,6 +46,8 @@ import shutil
 import argparse
 import importlib
 import glob
+import add_font
+from google.protobuf import text_format
 fb_check = importlib.import_module("fontbakery-check-ttf")
 
 
@@ -85,8 +87,19 @@ def main(path):
 
     # copy txt_file into our ship repo
     shutil.copy(description_file, ship_repo)
-    shutil.copy(meta_file, ship_repo)
     shutil.copy(ofl_file, ship_repo)
+
+    # Generate METADATA.pb
+    metadata = add_font._MakeMetadata(ship_repo)
+    text_proto = text_format.MessageToString(metadata)
+    add_font._WriteTextFile(os.path.join(ship_repo, 'METADATA.pb'), text_proto)
+
+    # Check with Fontbakery
+    pass
+    print ('done')
+
+
+
     # # Load gitignore file, if it doesn't exist, create one
     # try:
     #     gitignore_file = open(os.path.join(path, '.gitignore'))
