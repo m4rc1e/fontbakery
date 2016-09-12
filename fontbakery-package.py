@@ -36,8 +36,6 @@ Which will be converted to:
 ├── METADATA.pb
 └── OFL.txt
 
-METADATA.pb will be generated as well.
-
 '''
 
 import os
@@ -94,9 +92,9 @@ def main(path):
     text_proto = text_format.MessageToString(metadata)
     add_font._WriteTextFile(os.path.join(ship_repo, 'METADATA.pb'), text_proto)
 
-    # Check with Fontbakery
-    pass
-    print ('done')
+    # Check ship repo with Fontbakery-check-ttf
+    shipped_ttfs = glob.glob('%s/*.ttf' % ship_repo)
+    fb_check.main(shipped_ttfs, verbose=True)
 
 
 
