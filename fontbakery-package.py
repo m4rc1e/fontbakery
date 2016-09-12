@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 '''
 Font Bakery Package:
 ~~~~~~~~~~~~~~~~~~~
@@ -7,8 +10,8 @@ for Google Fonts.
 
 Current upstream repos have the following structure:
 
-├── AUTHORS.txt 
-├── CONTRIBUTORS.txt 
+├── AUTHORS.txt
+├── CONTRIBUTORS.txt
 ├── DESCRIPTION.en_us.html
 ├── OFL.txt 
 ├── README.md 
@@ -39,10 +42,15 @@ import os
 import sys
 import argparse
 import importlib
+import glob
 fb_check = importlib.import_module("fontbakery-check-ttf")
 
 
 def main(path):
+    fonts = glob.glob(os.path.join(path, 'fonts/*.ttf'))
+    if not fonts:
+        fonts = glob.glob(os.path.join(path, 'fonts', 'ttf/*.ttf'))
+    print(fonts)
 
 
 if __name__ == "__main__":
