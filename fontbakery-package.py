@@ -2,8 +2,36 @@
 Font Bakery Package:
 ~~~~~~~~~~~~~~~~~~~
 
-If upstream source passes Font Bakery, create 'ofl/apache' package for Google
-Fonts.
+If upstream source folder passes Font Bakery, create 'ofl/apache' package
+for Google Fonts.
+
+Current upstream repos have the following structure:
+
+├── AUTHORS.txt 
+├── CONTRIBUTORS.txt 
+├── DESCRIPTION.en_us.html
+├── OFL.txt 
+├── README.md 
+├── fonts
+│   ├── MavenPro-Black.ttf
+│   ├── MavenPro-Bold.ttf
+│   ├── MavenPro-Medium.ttf
+│   └── MavenPro-Regular.ttf
+└── sources 
+    ├── MavenPro.glyphs 
+    └── build
+        └── instances.yml
+
+Which will be converted to:
+
+├── MavenPro-Black.ttf
+├── MavenPro-Bold.ttf
+├── MavenPro-Medium.ttf
+├── MavenPro-Regular.ttf
+├── DESCRIPTION.en_us.html
+├── FONTLOG.txt
+├── METADATA.pb
+└── OFL.txt
 
 '''
 
@@ -15,7 +43,7 @@ fb_check = importlib.import_module("fontbakery-check-ttf")
 
 
 def main(path):
-    print(path)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Package upstream repo")
