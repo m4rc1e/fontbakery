@@ -47,15 +47,28 @@ fb_check = importlib.import_module("fontbakery-check-ttf")
 
 
 def main(path):
-    fonts = glob.glob(os.path.join(path, 'fonts/*.ttf'))
-    if not fonts:
-        fonts = glob.glob(os.path.join(path, 'fonts', 'ttf/*.ttf'))
-    print(fonts)
+
+    font_files = glob.glob(os.path.join(path, 'fonts/*.ttf'))
+    if not font_files:
+        font_files = glob.glob(os.path.join(path, 'fonts', 'ttf/*.ttf'))
+    else:
+        print('No font sources found, should be at fonts/*.ttf or fonts/ttf/*.ttf')
+
+    description_file = os.path.join(path, 'DESCRIPTION.en_us.html')
+    meta_file = os.path.join(path, 'METADATA.pb')
+    ofl_file = os.path.join(path, 'OFL.txt')
+
+    # Load gitignore file, if it doesn't exist, create one
+    try:
+        gitignore_file = os.path.join(path, '.gitignore')
+        print(open(gitignore_file).read())
+    except IOError:
+        gitignore_file = open('.gitignore', 'w')
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Package upstream repo")
     parser.add_argument('source', metavar='s', type=str,
-                         help='Add source folder')
+                        help='Add source folder')
     args = parser.parse_args()
     main(args.source)
