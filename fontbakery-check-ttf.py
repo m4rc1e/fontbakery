@@ -277,7 +277,7 @@ class FontBakeryCheckLogger():
     self.current_check = None
     self.default_target = None  # All new checks have this target by default
     self.summary = {"Passed": 0,
-                    "Hotfixed": 0,
+                    "Hotfixes": 0,
                     "Skipped": 0,
                     "Errors": 0,
                     "Warnings": 0}
@@ -610,6 +610,9 @@ def get_FamilyProto_Message(path):
     text_format.Merge(text_data, message)
     return message
 
+
+def save_FamilyProto_Message(path, message):
+    open(path, "wb").write(text_format.MessageToString(message))
 
 def fetch_vendorID_list(logging):
   logging.debug("Fetching Microsoft's vendorID list")
@@ -1774,48 +1777,55 @@ def check_fontforge_outputs_error_msgs(fb, font_file):
     fb.skip("Skipping AdobeBlank since"
             " this font is a very peculiar hack.")
   else:
-    # temporary stderr redirection:
-    ff_err = os.tmpfile()
+    try:
+      # temporary stderr redirection:
+      ff_err = os.tmpfile()
 
-    # we do not redirect stderr on Travis because
-    # it's making it think the build failed.
-    # I'm not exactly sure why does it happen, but for now we'll
-    # workaround the issue by not capturing stderr messages
-    # when running on Travis.
-    if 'TRAVIS' not in os.environ:
-      stderr_backup = os.dup(2)
-      os.close(2)
-      os.dup2(ff_err.fileno(), 2)
+      # we do not redirect stderr on Travis because
+      # it's making it think the build failed.
+      # I'm not exactly sure why does it happen, but for now we'll
+      # workaround the issue by not capturing stderr messages
+      # when running on Travis.
+      if 'TRAVIS' not in os.environ:
+        stderr_backup = os.dup(2)
+        os.close(2)
+        os.dup2(ff_err.fileno(), 2)
 
-    # invoke font validation
-    # via fontforge python module:
-    fontforge_font = fontforge.open(font_file)
-    validation_state = fontforge_font.validate()
+      # invoke font validation
+      # via fontforge python module:
+      fontforge_font = fontforge.open(font_file)
+      validation_state = fontforge_font.validate()
 
-    if 'TRAVIS' not in os.environ:
-      # restore default stderr:
-      os.dup2(stderr_backup, 2)
-      sys.stderr = os.fdopen(2, 'w', 0)
+      if 'TRAVIS' not in os.environ:
+        # restore default stderr:
+        os.dup2(stderr_backup, 2)
+        sys.stderr = os.fdopen(2, 'w', 0)
 
-    # handle captured stderr messages:
-    ff_err.flush()
-    ff_err.seek(0, os.SEEK_SET)
-    ff_err_messages = ff_err.read()
-    filtered_err_msgs = ""
-    for line in ff_err_messages.split('\n'):
-      if 'The following table(s) in the font' \
-         ' have been ignored by FontForge' in line:
-        continue
-      if "Ignoring 'DSIG' digital signature table" in line:
-        continue
-      filtered_err_msgs += line + '\n'
+      # handle captured stderr messages:
+      ff_err.flush()
+      ff_err.seek(0, os.SEEK_SET)
+      ff_err_messages = ff_err.read()
+      filtered_err_msgs = ""
+      for line in ff_err_messages.split('\n'):
+        if 'The following table(s) in the font' \
+           ' have been ignored by FontForge' in line:
+          continue
+        if "Ignoring 'DSIG' digital signature table" in line:
+          continue
+        filtered_err_msgs += line + '\n'
 
-    if len(filtered_err_msgs.strip()) > 0:
-      fb.error(("fontforge did print these messages to stderr:\n"
-                "{}").format(filtered_err_msgs))
-    else:
-      fb.ok("fontforge validation did not output any error message.")
-    ff_err.close()
+      if len(filtered_err_msgs.strip()) > 0:
+        fb.error(("fontforge did print these messages to stderr:\n"
+                  "{}").format(filtered_err_msgs))
+      else:
+        fb.ok("fontforge validation did not output any error message.")
+      ff_err.close()
+    except:
+      fb.error("FontForge seems to have a problem while"
+               " attempting to run checks on this font file!"
+               " More info at: https://github.com/googlefonts/"
+               "fontbakery/issues/1166")
+
     return validation_state
 
 
@@ -3197,15 +3207,26 @@ def check_METADATA_contains_at_least_menu_and_latin_subsets(fb, family):
     fb.ok("METADATA.pb contains 'menu' and 'latin' subsets.")
 
 
-def check_METADATA_subsets_should_be_alphabetically_ordered(fb, family):
+def check_METADATA_subsets_alphabetically_ordered(fb, path, family):
   fb.new_check("METADATA.pb subsets should be alphabetically ordered.")
   expected = list(sorted(family.subsets))
 
   if list(family.subsets) != expected:
-    fb.error(("METADATA.pb subsets are not sorted "
-              "in alphabetical order: Got ['{}']"
-              " and expected ['{}']").format("', '".join(family.subsets),
-                                             "', '".join(expected)))
+    if config["autofix"]:
+      fb.hotfix(("METADATA.pb subsets were not sorted "
+                 "in alphabetical order: ['{}']"
+                 " We're hotfixing that"
+                 " to ['{}']").format("', '".join(family.subsets),
+                                      "', '".join(expected)))
+      del family.subsets[:]
+      family.subsets.extend(expected)
+
+      save_FamilyProto_Message(path, family)
+    else:
+      fb.error(("METADATA.pb subsets are not sorted "
+                "in alphabetical order: Got ['{}']"
+                " and expected ['{}']").format("', '".join(family.subsets),
+                                               "', '".join(expected)))
   else:
     fb.ok("METADATA.pb subsets are sorted in alphabetical order")
 
@@ -3950,8 +3971,8 @@ def fontbakery_check_ttf(config):
     check_with_ftxvalidator(fb, font_file)
     check_with_otsanitise(fb, font_file)
 
-#    validation_state = check_fontforge_outputs_error_msgs(fb, font_file)
-#    perform_all_fontforge_checks(fb, validation_state)
+    validation_state = check_fontforge_outputs_error_msgs(fb, font_file)
+    perform_all_fontforge_checks(fb, validation_state)
 
     check_OS2_usWinAscent_and_Descent(fb, vmetrics_ymin, vmetrics_ymax)
     check_Vertical_Metric_Linegaps(fb, font)
@@ -4022,7 +4043,7 @@ def fontbakery_check_ttf(config):
         check_METADATA_check_style_weight_pairs_are_unique(fb, family)
         check_METADATA_license_is_APACHE2_UFL_or_OFL(fb, family)
         check_METADATA_contains_at_least_menu_and_latin_subsets(fb, family)
-        check_METADATA_subsets_should_be_alphabetically_ordered(fb, family)
+        check_METADATA_subsets_alphabetically_ordered(fb, metadata, family)
         check_Copyright_notice_is_the_same_in_all_fonts(fb, family)
         check_METADATA_family_values_are_all_the_same(fb, family)
 
