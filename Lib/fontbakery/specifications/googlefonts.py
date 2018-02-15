@@ -1270,7 +1270,8 @@ def com_google_fonts_check_037(font):
   """Checking with Microsoft Font Validator."""
   try:
     import subprocess
-    fval_cmd = ["FontValidator.exe",
+    fval_cmd = ["mono",
+                "/Users/marc/Documents/googlefonts/fontbakery/bin/fontbakery-check-googlefonts.py",
                 "-file", font,
                 "-all-tables",
                 "-report-in-font-dir",
